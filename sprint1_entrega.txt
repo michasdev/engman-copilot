@@ -1,0 +1,4 @@
+Michel de Freitas Herrero Luis - RM574206 - 1CCPR
+Eduardo de Oliveira Caffaro - RM574696 - 1CCPR
+Repositório: https://github.com/michasdev/engman-copilot
+Fluxograma: https://github.com/michasdev/engman-copilot/blob/main/docs/arquitetura.png

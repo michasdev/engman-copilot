@@ -1,0 +1,226 @@
+{
+  "versao": "sprint1",
+  "projeto": "EngMan Copilot",
+  "dados": "simulados",
+  "descricao": "Contrato das funções que o assistente pode chamar. Catálogo, histórico e métricas vêm exclusivamente destas tools; a base de conhecimento guarda procedimento, ficha, norma, glossário e criticidade. Toda tool devolve erro estruturado em vez de dado inventado.",
+  "formato_erro": {
+    "type": "object",
+    "properties": {
+      "erro": {
+        "type": "string",
+        "enum": [
+          "ativo_nao_encontrado",
+          "parametro_invalido",
+          "sem_dados",
+          "indisponivel"
+        ]
+      },
+      "mensagem": {
+        "type": "string"
+      },
+      "tag": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "erro",
+      "mensagem"
+    ]
+  },
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "consultar_ativo",
+        "description": "Retorna a ficha de um ativo eletroeletrônico identificado por TAG: tipo, fabricante, modelo, km, praça ou pórtico, data de instalação, vida útil estimada e criticidade. Use antes de qualquer diagnóstico para confirmar que o ativo existe e qual é o seu contexto. Não invente TAG: se não encontrar, informe o erro ao usuário.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "description": "TAG do ativo no padrão do catálogo, por exemplo CFTV-PTZ-KM412-01",
+              "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$"
+            }
+          },
+          "required": [
+            "tag"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "consultar_historico_falhas",
+        "description": "Retorna o histórico simulado de falhas de um ativo identificado por TAG dentro de uma janela retroativa em meses. Use sempre que o usuário perguntar sobre reincidência, causa provável ou comportamento histórico de um equipamento. Cada registro traz data, sintoma, causa identificada, tempo de reparo, peça trocada e indicador de reincidência.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "description": "TAG do ativo no padrão do catálogo, por exemplo CFTV-PTZ-KM412-01"
+            },
+            "janela_meses": {
+              "type": "integer",
+              "description": "Janela retroativa em meses contada a partir da data atual",
+              "default": 12,
+              "minimum": 1,
+              "maximum": 60
+            },
+            "tipo_falha": {
+              "type": "string",
+              "description": "Filtro opcional pela natureza da falha registrada",
+              "enum": [
+                "obstrucao_lente",
+                "desfoque",
+                "comunicacao",
+                "energia",
+                "calibracao",
+                "hardware",
+                "outra"
+              ]
+            }
+          },
+          "required": [
+            "tag"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "consultar_procedimento",
+        "description": "Retorna o passo a passo do POP aplicável a um tipo de ativo e a um tipo de intervenção, incluindo pré-requisitos de segurança, EPI e condição de execução. Use quando o usuário pedir procedimento, quando a resposta envolver trabalho em campo ou quando for necessário encaminhar uma recusa de segurança para o documento correto.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "tipo_ativo": {
+              "type": "string",
+              "description": "Tipo de ativo coberto pelo recorte",
+              "enum": [
+                "cftv",
+                "pmv",
+                "callbox",
+                "sat",
+                "sca"
+              ]
+            },
+            "tipo_intervencao": {
+              "type": "string",
+              "description": "Natureza da intervenção que o POP deve cobrir",
+              "enum": [
+                "corretiva",
+                "preventiva",
+                "inspecao",
+                "cbm"
+              ]
+            }
+          },
+          "required": [
+            "tipo_ativo",
+            "tipo_intervencao"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "calcular_metricas_confiabilidade",
+        "description": "Calcula taxa de falha (lambda), MTBF e confiabilidade R(t) = e^(-lambda*t) para um ativo em uma janela, além da tendência em relação ao período anterior. Use somente quando houver histórico disponível e sempre informe a janela, o tempo de operação e a premissa de taxa de falha constante. Nunca estime esses valores sem a tool.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "description": "TAG do ativo no padrão do catálogo, por exemplo PMV-KM88-02"
+            },
+            "periodo_meses": {
+              "type": "integer",
+              "description": "Período de observação em meses",
+              "default": 12,
+              "minimum": 1,
+              "maximum": 60
+            },
+            "tempo_operacao_horas": {
+              "type": "number",
+              "description": "Horas de operação no período, quando conhecidas. Se omitido, assume 24 horas por dia no período",
+              "minimum": 1,
+              "maximum": 44640
+            }
+          },
+          "required": [
+            "tag",
+            "periodo_meses"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "abrir_ordem_servico",
+        "description": "Registra uma ordem de serviço simulada e devolve o número da OS, o status e os dados gravados. Use somente depois de confirmar o ativo, definir tipo de intervenção e prioridade com critério explícito e apresentar a descrição ao usuário. A abertura é simulada e exige validação humana antes de qualquer execução em campo.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "description": "TAG do ativo que receberá a OS"
+            },
+            "tipo_intervencao": {
+              "type": "string",
+              "description": "Tipo de intervenção recomendado",
+              "enum": [
+                "corretiva",
+                "preventiva",
+                "inspecao",
+                "cbm"
+              ]
+            },
+            "prioridade": {
+              "type": "string",
+              "description": "Prioridade da OS segundo a matriz de criticidade",
+              "enum": [
+                "critica",
+                "alta",
+                "media",
+                "baixa"
+              ]
+            },
+            "descricao": {
+              "type": "string",
+              "description": "Descrição objetiva do problema e da intervenção, sem dado pessoal e sem laudo",
+              "minLength": 10,
+              "maxLength": 600
+            },
+            "janela_inicio": {
+              "type": "string",
+              "description": "Início sugerido da janela de atendimento, em formato ISO 8601 (AAAA-MM-DDTHH:MM)",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$"
+            },
+            "janela_fim": {
+              "type": "string",
+              "description": "Fim sugerido da janela de atendimento, em formato ISO 8601 (AAAA-MM-DDTHH:MM)",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$"
+            }
+          },
+          "required": [
+            "tag",
+            "tipo_intervencao",
+            "prioridade",
+            "descricao",
+            "janela_inicio",
+            "janela_fim"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}
